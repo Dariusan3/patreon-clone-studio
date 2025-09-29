@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Star, Crown, Zap } from "lucide-react"
@@ -60,9 +61,12 @@ export function MembershipTiers() {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Choose your membership
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Support my creative journey and get exclusive perks, early access, and behind-the-scenes content.
           </p>
+          <Button variant="outline" asChild>
+            <Link to="/membership">View All Tiers & Details</Link>
+          </Button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">

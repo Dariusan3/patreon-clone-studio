@@ -2,14 +2,17 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Search, Menu, X } from "lucide-react"
+import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const location = useLocation()
 
   const navItems = [
-    { label: "Home", href: "#", active: true },
+    { label: "Home", href: "/", active: location.pathname === "/" },
     { label: "Posts", href: "#" },
+    { label: "Membership", href: "/membership", active: location.pathname === "/membership" },
     { label: "Collections", href: "#" },
     { label: "Shop", href: "#" },
   ]
@@ -33,8 +36,9 @@ export function Header() {
                   "relative",
                   item.active && "bg-primary text-primary-foreground"
                 )}
+                asChild
               >
-                {item.label}
+                <Link to={item.href}>{item.label}</Link>
               </Button>
             ))}
           </nav>
@@ -70,8 +74,9 @@ export function Header() {
                   key={item.label}
                   variant={item.active ? "default" : "ghost"}
                   className="justify-start"
+                  asChild
                 >
-                  {item.label}
+                  <Link to={item.href}>{item.label}</Link>
                 </Button>
               ))}
               <Button variant="gradient" className="justify-start">
