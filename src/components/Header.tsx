@@ -13,8 +13,8 @@ export function Header() {
     { label: "Home", href: "/", active: location.pathname === "/" },
     { label: "Posts", href: "#" },
     { label: "Membership", href: "/membership", active: location.pathname === "/membership" },
-    { label: "Collections", href: "#" },
     { label: "Shop", href: "/shop", active: location.pathname === "/shop" },
+    { label: "Dashboard", href: "/dashboard", active: location.pathname === "/dashboard" },
   ]
 
   return (
