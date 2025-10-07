@@ -14,7 +14,7 @@ export function Header() {
     { label: "Posts", href: "#" },
     { label: "Membership", href: "/membership", active: location.pathname === "/membership" },
     { label: "Collections", href: "#" },
-    { label: "Shop", href: "#" },
+    { label: "Shop", href: "/shop", active: location.pathname === "/shop" },
   ]
 
   return (
