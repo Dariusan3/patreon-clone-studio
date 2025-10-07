@@ -18,12 +18,6 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold mb-2">Recent posts</h2>
-                <p className="text-muted-foreground">
-                  Latest updates and exclusive content from the creator
-                </p>
-              </div>
               <PostFeed />
             </div>
             
