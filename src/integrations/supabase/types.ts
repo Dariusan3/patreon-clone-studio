@@ -14,7 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      post_files: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          is_downloadable: boolean | null
+          post_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          is_downloadable?: boolean | null
+          post_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          is_downloadable?: boolean | null
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_files_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          featured_order: number | null
+          id: string
+          is_featured: boolean | null
+          is_locked: boolean | null
+          is_published: boolean | null
+          required_tier: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string | null
+          featured_order?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_locked?: boolean | null
+          is_published?: boolean | null
+          required_tier?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          featured_order?: number | null
+          id?: string
+          is_featured?: boolean | null
+          is_locked?: boolean | null
+          is_published?: boolean | null
+          required_tier?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
