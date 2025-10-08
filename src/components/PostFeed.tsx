@@ -4,8 +4,9 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { Heart, MessageCircle, Share2, Lock, Eye, Star, TrendingUp } from "lucide-react"
+import { Heart, MessageCircle, Share2, Lock, Eye, Star, TrendingUp, Shield } from "lucide-react"
 import creatorAvatar from "@/assets/creator-avatar.jpg"
+import { useToast } from "@/hooks/use-toast"
 
 // Mock posts data with categories and featured flag
 const posts = [
@@ -146,7 +147,17 @@ const getPostsByCategory = (category: string) => {
 const categories = ["All", "Art", "Music", "Exclusive"]
 
 // Post Card Component (reusable)
-const PostCard = ({ post }: { post: typeof posts[0] }) => (
+const PostCard = ({ post }: { post: typeof posts[0] }) => {
+  const { toast } = useToast()
+
+  const handleUnlockClick = () => {
+    toast({
+      title: "Authentication Required",
+      description: "Please sign in to unlock this content and access members-only posts.",
+    })
+  }
+
+  return (
   <Card className="bg-gradient-card shadow-card hover:shadow-elevated transition-all duration-300">
     <CardHeader>
       <div className="flex items-start justify-between">
@@ -174,17 +185,20 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => (
       
       {post.isLocked ? (
         <div className="relative">
-          <p className="text-muted-foreground line-clamp-2 blur-sm select-none">
+          <p className="text-muted-foreground line-clamp-2 blur-sm select-none pointer-events-none">
             {post.content}
           </p>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center border shadow-elevated">
-              <Lock className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <p className="font-medium mb-2">Members only content</p>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Lock className="w-8 h-8 text-primary" />
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <p className="font-medium mb-2">Protected Content</p>
               <p className="text-sm text-muted-foreground mb-3">
                 Join the {post.tier} tier to unlock this post
               </p>
-              <Button variant="gradient" size="sm">
+              <Button variant="gradient" size="sm" onClick={handleUnlockClick}>
                 Become a member
               </Button>
             </div>
@@ -195,12 +209,17 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => (
       )}
       
       {post.image && (
-        <div className="mt-4 rounded-lg overflow-hidden">
+        <div className="mt-4 rounded-lg overflow-hidden relative">
           <img 
             src={post.image} 
             alt="Post content"
-            className="w-full h-64 object-cover"
+            className={`w-full h-64 object-cover ${post.isLocked ? 'blur-md' : ''}`}
           />
+          {post.isLocked && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-sm">
+              <Lock className="w-12 h-12 text-primary" />
+            </div>
+          )}
         </div>
       )}
     </CardContent>
@@ -230,7 +249,8 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => (
       </div>
     </CardFooter>
   </Card>
-)
+  )
+}
 
 export function PostFeed() {
   const featuredPosts = getFeaturedPosts()
