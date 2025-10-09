@@ -7,6 +7,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Heart, MessageCircle, Share2, Lock, Eye, Star, TrendingUp, Shield } from "lucide-react"
 import creatorAvatar from "@/assets/creator-avatar.jpg"
 import { useToast } from "@/hooks/use-toast"
+import { CommentSection } from "@/components/CommentSection"
 
 // Mock posts data with categories and featured flag
 const posts = [
@@ -224,7 +225,7 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
       )}
     </CardContent>
     
-    <CardFooter className="pt-0">
+    <CardFooter className="pt-0 flex-col gap-4">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent">
@@ -247,6 +248,12 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
           </div>
         )}
       </div>
+      
+      {!post.isLocked && (
+        <div className="w-full">
+          <CommentSection postId={post.id.toString()} />
+        </div>
+      )}
     </CardFooter>
   </Card>
   )
