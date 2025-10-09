@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
+import { NotificationBell } from "@/components/NotificationBell"
 import { Search, Menu, X } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
@@ -48,6 +49,7 @@ export function Header() {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Search className="h-5 w-5" />
             </Button>
+            <NotificationBell />
             <ThemeToggle />
             <Button variant="gradient" className="hidden md:flex">
               Join Now
