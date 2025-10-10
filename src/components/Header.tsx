@@ -2,21 +2,45 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { NotificationBell } from "@/components/NotificationBell"
-import { Search, Menu, X } from "lucide-react"
-import { Link, useLocation } from "react-router-dom"
+import { Search, Menu, X, LogOut, User } from "lucide-react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/hooks/useAuth"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, userRole, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
+  }
+
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase()
+  }
 
   const navItems = [
     { label: "Home", href: "/", active: location.pathname === "/" },
     { label: "Posts", href: "#" },
     { label: "Membership", href: "/membership", active: location.pathname === "/membership" },
     { label: "Shop", href: "/shop", active: location.pathname === "/shop" },
-    { label: "Dashboard", href: "/dashboard", active: location.pathname === "/dashboard" },
   ]
+
+  // Only show Dashboard link for admin users
+  if (userRole === 'admin') {
+    navItems.push({ label: "Dashboard", href: "/dashboard", active: location.pathname === "/dashboard" })
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -49,11 +73,50 @@ export function Header() {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Search className="h-5 w-5" />
             </Button>
-            <NotificationBell />
+            {user && <NotificationBell />}
             <ThemeToggle />
-            <Button variant="gradient" className="hidden md:flex">
-              Join Now
-            </Button>
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>{getInitials(user.email || '')}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.email}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  {userRole === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button asChild variant="ghost" className="hidden md:flex">
+                  <Link to="/member-login">Sign In</Link>
+                </Button>
+                <Button asChild variant="gradient" className="hidden md:flex">
+                  <Link to="/signup">Join Now</Link>
+                </Button>
+              </>
+            )}
             
             {/* Mobile Menu Button */}
             <Button
@@ -81,9 +144,31 @@ export function Header() {
                   <Link to={item.href}>{item.label}</Link>
                 </Button>
               ))}
-              <Button variant="gradient" className="justify-start">
-                Join Now
-              </Button>
+              {user ? (
+                <>
+                  {userRole === 'admin' && (
+                    <Button variant="ghost" className="justify-start" asChild>
+                      <Link to="/dashboard">
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </Button>
+                  )}
+                  <Button variant="ghost" onClick={handleSignOut} className="justify-start">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" className="justify-start" asChild>
+                    <Link to="/member-login">Sign In</Link>
+                  </Button>
+                  <Button variant="gradient" className="justify-start" asChild>
+                    <Link to="/signup">Join Now</Link>
+                  </Button>
+                </>
+              )}
             </nav>
           </div>
         )}
