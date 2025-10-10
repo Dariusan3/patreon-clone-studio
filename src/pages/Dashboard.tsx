@@ -7,7 +7,8 @@ import PostManager from "@/components/PostManager";
 import { ShopManager } from "@/components/ShopManager";
 import { MembershipManager } from "@/components/MembershipManager";
 import { SiteDesignManager } from "@/components/SiteDesignManager";
-import { LayoutDashboard, FileText, Package, Crown, Palette } from "lucide-react";
+import { FeaturedPostsManager } from "@/components/FeaturedPostsManager";
+import { LayoutDashboard, FileText, Package, Crown, Palette, Star } from "lucide-react";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -24,7 +25,7 @@ const Dashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-auto">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 lg:w-auto">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Overview</span>
@@ -32,6 +33,10 @@ const Dashboard = () => {
               <TabsTrigger value="posts" className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Posts</span>
+              </TabsTrigger>
+              <TabsTrigger value="featured" className="flex items-center gap-2">
+                <Star className="h-4 w-4" />
+                <span className="hidden sm:inline">Featured</span>
               </TabsTrigger>
               <TabsTrigger value="shop" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
@@ -97,6 +102,10 @@ const Dashboard = () => {
                   <PostManager />
                 </TabsContent>
               </Tabs>
+            </TabsContent>
+
+            <TabsContent value="featured">
+              <FeaturedPostsManager />
             </TabsContent>
 
             <TabsContent value="shop">
