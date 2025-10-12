@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,148 +9,42 @@ import { Heart, MessageCircle, Share2, Lock, Eye, Star, TrendingUp, Shield } fro
 import creatorAvatar from "@/assets/creator-avatar.jpg"
 import { useToast } from "@/hooks/use-toast"
 import { CommentSection } from "@/components/CommentSection"
+import { supabase } from "@/integrations/supabase/client"
 
-// Mock posts data with categories and featured flag
-const posts = [
-  {
-    id: 1,
-    title: "New Digital Art Collection: Cosmic Dreams",
-    content: "Just finished my latest series exploring the cosmos through digital art. This collection features vibrant nebulae, distant galaxies, and abstract interpretations of space phenomena.",
-    image: null,
-    isLocked: false,
-    timestamp: "2 hours ago",
-    likes: 234,
-    comments: 48,
-    tier: "Free",
-    category: "Art",
-    isFeatured: true, // Logic placeholder: can be toggled by creator
-    featuredOrder: 1  // Logic placeholder: determines order in featured section
-  },
-  {
-    id: 2,
-    title: "Behind the Scenes: My Creative Process",
-    content: "Ever wondered how I create my artworks? In this exclusive post, I'm sharing my complete process from initial concept to final piece...",
-    image: null,
-    isLocked: true,
-    timestamp: "1 day ago",
-    likes: 167,
-    comments: 35,
-    tier: "Supporter",
-    category: "Exclusive",
-    isFeatured: true,
-    featuredOrder: 2
-  },
-  {
-    id: 3,
-    title: "New Music Track: Neon Nights",
-    content: "My latest synthwave composition is here! This track blends retro 80s vibes with modern production. Available exclusively for supporters.",
-    image: null,
-    isLocked: true,
-    timestamp: "2 days ago",
-    likes: 298,
-    comments: 62,
-    tier: "Supporter",
-    category: "Music",
-    isFeatured: true,
-    featuredOrder: 3
-  },
-  {
-    id: 4,
-    title: "Weekly Art Challenge Results",
-    content: "Amazing submissions from the community this week! Thank you to everyone who participated in the 'Ethereal Landscapes' challenge.",
-    image: null,
-    isLocked: false,
-    timestamp: "3 days ago",
-    likes: 89,
-    comments: 23,
-    tier: "Free",
-    category: "Art",
-    isFeatured: false,
-    featuredOrder: null
-  },
-  {
-    id: 5,
-    title: "Exclusive Tutorial: Advanced Color Theory",
-    content: "A comprehensive guide to using color theory in digital art. Includes practical exercises and downloadable resources...",
-    image: null,
-    isLocked: true,
-    timestamp: "5 days ago",
-    likes: 156,
-    comments: 42,
-    tier: "Art Enthusiast",
-    category: "Exclusive",
-    isFeatured: false,
-    featuredOrder: null
-  },
-  {
-    id: 6,
-    title: "Monthly Music Production Tips",
-    content: "Here are my top 5 production techniques I learned this month. From mixing to mastering, these tips will level up your tracks!",
-    image: null,
-    isLocked: false,
-    timestamp: "1 week ago",
-    likes: 124,
-    comments: 28,
-    tier: "Free",
-    category: "Music",
-    isFeatured: false,
-    featuredOrder: null
-  },
-  {
-    id: 7,
-    title: "WIP: Fantasy Landscape Series",
-    content: "Working on a new series of fantasy landscapes. Here's a sneak peek at the first piece - a mystical forest at twilight.",
-    image: null,
-    isLocked: false,
-    timestamp: "1 week ago",
-    likes: 203,
-    comments: 51,
-    tier: "Free",
-    category: "Art",
-    isFeatured: false,
-    featuredOrder: null
-  },
-  {
-    id: 8,
-    title: "Early Access: Unreleased Album Preview",
-    content: "Get exclusive early access to 3 tracks from my upcoming album! Only available to Art Enthusiast tier and above.",
-    image: null,
-    isLocked: true,
-    timestamp: "1 week ago",
-    likes: 412,
-    comments: 87,
-    tier: "Art Enthusiast",
-    category: "Music",
-    isFeatured: false,
-    featuredOrder: null
-  }
+interface Post {
+  id: string
+  title: string
+  content: string
+  category: string
+  is_published: boolean
+  is_locked: boolean
+  is_featured: boolean
+  featured_order: number | null
+  required_tier: string | null
+  created_at: string
+  user_id: string
+}
+
+const posts: Post[] = [
 ]
-
-// Logic placeholder: Function to set a post as featured
-// This would typically connect to backend/state management
-const setPostAsFeatured = (postId: number, isFeatured: boolean, order?: number) => {
-  console.log(`Setting post ${postId} featured status to ${isFeatured} with order ${order}`)
-  // Implementation: Update database/state to mark post as featured
-}
-
-// Logic placeholder: Function to get featured posts (sorted by featuredOrder)
-const getFeaturedPosts = () => {
-  return posts
-    .filter(post => post.isFeatured)
-    .sort((a, b) => (a.featuredOrder || 0) - (b.featuredOrder || 0))
-}
-
-// Logic placeholder: Function to get posts by category
-const getPostsByCategory = (category: string) => {
-  if (category === "All") return posts
-  return posts.filter(post => post.category === category)
-}
 
 const categories = ["All", "Art", "Music", "Exclusive"]
 
 // Post Card Component (reusable)
-const PostCard = ({ post }: { post: typeof posts[0] }) => {
+const PostCard = ({ post }: { post: Post }) => {
   const { toast } = useToast()
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    
+    if (hours < 1) return 'Just now'
+    if (hours < 24) return `${hours} hours ago`
+    const days = Math.floor(hours / 24)
+    if (days < 7) return `${days} days ago`
+    return date.toLocaleDateString()
+  }
 
   const handleUnlockClick = () => {
     toast({
@@ -169,14 +64,14 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
           </Avatar>
           <div>
             <div className="font-medium">𓆩Yours Biro𓆪</div>
-            <div className="text-sm text-muted-foreground">{post.timestamp}</div>
+            <div className="text-sm text-muted-foreground">{formatDate(post.created_at)}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={post.tier === "Free" ? "secondary" : "default"} className="text-xs">
-            {post.tier}
+          <Badge variant={post.is_locked ? "default" : "secondary"} className="text-xs">
+            {post.required_tier || "Free"}
           </Badge>
-          {post.isLocked && <Lock className="w-4 h-4 text-muted-foreground" />}
+          {post.is_locked && <Lock className="w-4 h-4 text-muted-foreground" />}
         </div>
       </div>
     </CardHeader>
@@ -184,7 +79,7 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
     <CardContent className="pt-0">
       <h3 className="font-semibold text-lg mb-3">{post.title}</h3>
       
-      {post.isLocked ? (
+      {post.is_locked ? (
         <div className="relative">
           <p className="text-muted-foreground line-clamp-2 blur-sm select-none pointer-events-none">
             {post.content}
@@ -197,7 +92,7 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
               </div>
               <p className="font-medium mb-2">Protected Content</p>
               <p className="text-sm text-muted-foreground mb-3">
-                Join the {post.tier} tier to unlock this post
+                Join the {post.required_tier} tier to unlock this post
               </p>
               <Button variant="gradient" size="sm" onClick={handleUnlockClick}>
                 Become a member
@@ -208,21 +103,6 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
       ) : (
         <p className="text-foreground">{post.content}</p>
       )}
-      
-      {post.image && (
-        <div className="mt-4 rounded-lg overflow-hidden relative">
-          <img 
-            src={post.image} 
-            alt="Post content"
-            className={`w-full h-64 object-cover ${post.isLocked ? 'blur-md' : ''}`}
-          />
-          {post.isLocked && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-sm">
-              <Lock className="w-12 h-12 text-primary" />
-            </div>
-          )}
-        </div>
-      )}
     </CardContent>
     
     <CardFooter className="pt-0 flex-col gap-4">
@@ -230,18 +110,18 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent">
             <Heart className="w-5 h-5 mr-2" />
-            {post.likes}
+            0
           </Button>
           <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent">
             <MessageCircle className="w-5 h-5 mr-2" />
-            {post.comments}
+            0
           </Button>
           <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent">
             <Share2 className="w-5 h-5" />
           </Button>
         </div>
         
-        {!post.isLocked && (
+        {!post.is_locked && (
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <Eye className="w-4 h-4" />
             <span>Public</span>
@@ -249,9 +129,9 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
         )}
       </div>
       
-      {!post.isLocked && (
+      {!post.is_locked && (
         <div className="w-full">
-          <CommentSection postId={post.id.toString()} />
+          <CommentSection postId={post.id} />
         </div>
       )}
     </CardFooter>
@@ -260,7 +140,66 @@ const PostCard = ({ post }: { post: typeof posts[0] }) => {
 }
 
 export function PostFeed() {
-  const featuredPosts = getFeaturedPosts()
+  const [posts, setPosts] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchPosts()
+
+    // Set up realtime subscription for new posts
+    const channel = supabase
+      .channel('posts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts'
+        },
+        () => {
+          fetchPosts()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
+
+  const fetchPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setPosts(data || [])
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const featuredPosts = posts
+    .filter(post => post.is_featured)
+    .sort((a, b) => (a.featured_order || 0) - (b.featured_order || 0))
+
+  const getPostsByCategory = (category: string) => {
+    if (category === "All") return posts
+    return posts.filter(post => post.category === category)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
   
   return (
     <div className="space-y-8">
@@ -281,8 +220,8 @@ export function PostFeed() {
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="w-4 h-4 text-primary" />
                         <Badge variant="default" className="text-xs">Featured</Badge>
-                        <Badge variant={post.tier === "Free" ? "secondary" : "default"} className="text-xs">
-                          {post.tier}
+                        <Badge variant={post.is_locked ? "default" : "secondary"} className="text-xs">
+                          {post.required_tier || "Free"}
                         </Badge>
                       </div>
                       <h3 className="font-semibold text-lg line-clamp-2">{post.title}</h3>
@@ -294,17 +233,17 @@ export function PostFeed() {
                       <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Heart className="w-4 h-4" />
-                          {post.likes}
+                          0
                         </span>
                         <span className="flex items-center gap-1">
                           <MessageCircle className="w-4 h-4" />
-                          {post.comments}
+                          0
                         </span>
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button variant={post.isLocked ? "gradient" : "outline"} size="sm" className="w-full">
-                        {post.isLocked ? "Unlock Post" : "View Post"}
+                      <Button variant={post.is_locked ? "gradient" : "outline"} size="sm" className="w-full">
+                        {post.is_locked ? "Unlock Post" : "View Post"}
                       </Button>
                     </CardFooter>
                   </Card>

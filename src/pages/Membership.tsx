@@ -1,11 +1,21 @@
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Star, Crown, Zap, ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 
-const membershipTiers = [
+interface MembershipTier {
+  id: string;
+  name: string;
+  price: number;
+  description: string | null;
+}
+
+const mockTiers = [
   {
     id: "supporter",
     name: "Supporter",
@@ -92,9 +102,36 @@ const hasAccessToTier = (tierId: string) => {
 }
 
 export default function Membership() {
-  // TODO: Add actual user authentication state
-  const isAuthenticated = false
-  const userTier = getUserSubscription()
+  const [tiers, setTiers] = useState<MembershipTier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const isAuthenticated = false;
+  const userTier = null;
+
+  useEffect(() => {
+    fetchTiers();
+  }, []);
+
+  const fetchTiers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .order('price', { ascending: true });
+
+      if (error) throw error;
+      setTiers(data || []);
+    } catch (error) {
+      console.error('Error fetching tiers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load membership tiers",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleJoinTier = (tierId: string) => {
     // TODO: Implement subscription logic
@@ -157,99 +194,98 @@ export default function Membership() {
       {/* Membership Tiers Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {membershipTiers.map((tier) => {
-              const Icon = tier.icon
-              const hasAccess = hasAccessToTier(tier.id)
-              const isCurrentTier = userTier === tier.id
-              
-              return (
-                <Card 
-                  key={tier.id} 
-                  className={cn(
-                    "relative bg-gradient-card shadow-card hover:shadow-elevated transition-all duration-300 h-fit",
-                    tier.popular && "border-primary shadow-patreon scale-105 lg:scale-110",
-                    hasAccess && "ring-2 ring-primary/20"
-                  )}
-                >
-                  {tier.popular && (
-                    <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                      Most Popular
-                    </Badge>
-                  )}
-                  
-                  {isCurrentTier && (
-                    <Badge className="absolute -top-2 right-4 bg-green-500 text-white">
-                      Current Plan
-                    </Badge>
-                  )}
-                  
-                  <CardHeader className="text-center pb-4">
-                    <div className="mx-auto mb-4 p-4 rounded-full bg-accent w-fit">
-                      <Icon className="w-8 h-8 text-accent-foreground" />
-                    </div>
-                    <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                    <CardDescription className="text-base leading-relaxed">
-                      {tier.description}
-                    </CardDescription>
-                    <div className="pt-6">
-                      <div className="text-4xl font-bold text-primary">
-                        ${tier.price}
-                        <span className="text-lg font-normal text-muted-foreground">
-                          /month
-                        </span>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : tiers.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No membership tiers available yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {tiers.map((tier, index) => {
+                const Icon = index === 0 ? Star : index === 1 ? Crown : Zap;
+                const isPopular = index === 1;
+                const isCurrentTier = false;
+                
+                return (
+                  <Card 
+                    key={tier.id} 
+                    className={cn(
+                      "relative bg-gradient-card shadow-card hover:shadow-elevated transition-all duration-300 h-fit",
+                      isPopular && "border-primary shadow-patreon scale-105 lg:scale-110"
+                    )}
+                  >
+                    {isPopular && (
+                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+                        Most Popular
+                      </Badge>
+                    )}
+                    
+                    {isCurrentTier && (
+                      <Badge className="absolute -top-2 right-4 bg-green-500 text-white">
+                        Current Plan
+                      </Badge>
+                    )}
+                    
+                    <CardHeader className="text-center pb-4">
+                      <div className="mx-auto mb-4 p-4 rounded-full bg-accent w-fit">
+                        <Icon className="w-8 h-8 text-accent-foreground" />
                       </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-0 space-y-6">
-                    {/* Key Benefits */}
-                    <div>
-                      <h4 className="font-semibold mb-3 text-accent-foreground">Why choose this tier?</h4>
-                      <ul className="space-y-2">
-                        {tier.benefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                            <span className="text-sm text-muted-foreground">{benefit}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* All Features */}
-                    <div>
-                      <h4 className="font-semibold mb-3 text-accent-foreground">What's included:</h4>
-                      <ul className="space-y-3">
-                        {tier.features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-3">
+                      <CardTitle className="text-2xl">{tier.name}</CardTitle>
+                      <CardDescription className="text-base leading-relaxed">
+                        {tier.description || "Premium membership benefits"}
+                      </CardDescription>
+                      <div className="pt-6">
+                        <div className="text-4xl font-bold text-primary">
+                          ${tier.price}
+                          <span className="text-lg font-normal text-muted-foreground">
+                            /month
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0 space-y-6">
+                      <div>
+                        <h4 className="font-semibold mb-3 text-accent-foreground">What's included:</h4>
+                        <ul className="space-y-3">
+                          <li className="flex items-start gap-3">
                             <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{feature}</span>
+                            <span className="text-sm">Access to exclusive content</span>
                           </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                  
-                  <CardFooter className="pt-6">
-                    <Button 
-                      onClick={() => handleJoinTier(tier.id)}
-                      disabled={isCurrentTier}
-                      variant={tier.popular ? "gradient" : "outline"}
-                      size="lg"
-                      className="w-full"
-                    >
-                      {isCurrentTier 
-                        ? "Current Plan" 
-                        : hasAccess 
-                          ? "Manage Subscription"
+                          <li className="flex items-start gap-3">
+                            <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">Priority support</span>
+                          </li>
+                          <li className="flex items-start gap-3">
+                            <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">Early access to new releases</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </CardContent>
+                    
+                    <CardFooter className="pt-6">
+                      <Button 
+                        onClick={() => handleJoinTier(tier.id)}
+                        disabled={isCurrentTier}
+                        variant={isPopular ? "gradient" : "outline"}
+                        size="lg"
+                        className="w-full"
+                      >
+                        {isCurrentTier 
+                          ? "Current Plan" 
                           : `Join for $${tier.price}/month`
-                      }
-                    </Button>
-                  </CardFooter>
-                </Card>
-              )
-            })}
-          </div>
+                        }
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

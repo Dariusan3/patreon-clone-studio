@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ShoppingCart, Download, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock product data
-const products = [
+interface ShopItem {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  is_available: boolean;
+}
+
+const mockProducts = [
   {
     id: "1",
     title: "Exclusive Art Pack Vol. 1",
@@ -138,11 +147,37 @@ const initiateSecureDownload = async (productId: string, fileUrl: string) => {
 
 const Shop = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [products, setProducts] = useState<ShopItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const filteredProducts = selectedCategory === "all" 
-    ? products 
-    : products.filter(p => p.category === selectedCategory);
+  useEffect(() => {
+    fetchShopItems();
+  }, []);
+
+  const fetchShopItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('shop_items')
+        .select('*')
+        .eq('is_available', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching shop items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load shop items",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products;
 
   const handleAddToCart = (productId: string, productTitle: string) => {
     addToCart(productId);
@@ -232,88 +267,86 @@ const Shop = () => {
           </Tabs>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProducts.map((product) => {
-              const hasAccess = hasAccessToProduct(product.id, product.requiredTier);
-              const isPurchased = hasPurchasedProduct(product.id);
+          {loading ? (
+            <div className="flex items-center justify-center py-12 col-span-3">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-12 col-span-3">
+              <p className="text-muted-foreground">No shop items available yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProducts.map((product) => {
+                const isPurchased = false;
 
-              return (
-                <Card key={product.id} className="flex flex-col hover:shadow-lg transition-shadow">
-                  <CardHeader className="p-0">
-                    <div className="relative aspect-video overflow-hidden rounded-t-lg">
-                      <img 
-                        src={product.image} 
-                        alt={product.title}
-                        className="w-full h-full object-cover"
-                      />
-                      {product.requiredTier && (
-                        <Badge 
-                          className="absolute top-3 right-3"
-                          variant={getTierBadgeVariant(product.requiredTier)}
-                        >
-                          {product.requiredTier} tier
-                        </Badge>
-                      )}
-                      {isPurchased && (
-                        <Badge className="absolute top-3 left-3 bg-green-600">
-                          Owned
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="flex-1 pt-6">
-                    <CardTitle className="mb-2">{product.title}</CardTitle>
-                    <CardDescription className="mb-4">{product.description}</CardDescription>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Download className="w-4 h-4" />
-                      <span>{product.fileType.toUpperCase()} file</span>
-                    </div>
-                  </CardContent>
-
-                  <CardFooter className="flex-col gap-3">
-                    <div className="w-full flex items-center justify-between mb-2">
-                      <span className="text-2xl font-bold">${product.price}</span>
-                    </div>
-
-                    {!hasAccess ? (
-                      <Button className="w-full" disabled>
-                        <Lock className="w-4 h-4 mr-2" />
-                        Requires {product.requiredTier} tier
-                      </Button>
-                    ) : isPurchased ? (
-                      <Button 
-                        className="w-full"
-                        variant="default"
-                        onClick={() => handleDownload(product.id, product.fileUrl, product.title)}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    ) : (
-                      <div className="w-full flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={() => handleAddToCart(product.id, product.title)}
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Add to Cart
-                        </Button>
-                        <Button 
-                          variant="gradient"
-                          className="flex-1"
-                          onClick={() => handleBuyNow(product.id, product.title)}
-                        >
-                          Buy Now
-                        </Button>
+                return (
+                  <Card key={product.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                    <CardHeader className="p-0">
+                      <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ShoppingCart className="w-16 h-16 text-muted-foreground" />
+                          </div>
+                        )}
+                        {isPurchased && (
+                          <Badge className="absolute top-3 left-3 bg-green-600">
+                            Owned
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardHeader>
+                  
+                    <CardContent className="flex-1 pt-6">
+                      <CardTitle className="mb-2">{product.title}</CardTitle>
+                      <CardDescription className="mb-4">{product.description || "Digital product"}</CardDescription>
+                    </CardContent>
+
+                    <CardFooter className="flex-col gap-3">
+                      <div className="w-full flex items-center justify-between mb-2">
+                        <span className="text-2xl font-bold">${product.price}</span>
+                      </div>
+
+                      {isPurchased ? (
+                        <Button 
+                          className="w-full"
+                          variant="default"
+                          onClick={() => handleDownload(product.id, "", product.title)}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </Button>
+                      ) : (
+                        <div className="w-full flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => handleAddToCart(product.id, product.title)}
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            Add to Cart
+                          </Button>
+                          <Button 
+                            variant="gradient"
+                            className="flex-1"
+                            onClick={() => handleBuyNow(product.id, product.title)}
+                          >
+                            Buy Now
+                          </Button>
+                        </div>
+                      )}
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
     </div>
