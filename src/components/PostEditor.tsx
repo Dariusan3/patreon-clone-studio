@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Eye, Save, Send, Image as ImageIcon, FileText, Video } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostData {
   title: string;
@@ -22,36 +23,6 @@ interface PostData {
   status: "draft" | "published";
 }
 
-// Backend integration placeholders
-const uploadImage = async (file: File): Promise<string> => {
-  // TODO: Implement image upload to storage
-  // const { data, error } = await supabase.storage
-  //   .from('post-images')
-  //   .upload(`${Date.now()}-${file.name}`, file);
-  console.log("Uploading image:", file.name);
-  return URL.createObjectURL(file);
-};
-
-const uploadFile = async (file: File): Promise<string> => {
-  // TODO: Implement file upload to storage
-  console.log("Uploading file:", file.name);
-  return URL.createObjectURL(file);
-};
-
-const savePost = async (postData: PostData, isDraft: boolean) => {
-  // TODO: Save post to database
-  // const { data, error } = await supabase
-  //   .from('posts')
-  //   .insert({
-  //     title: postData.title,
-  //     content: postData.content,
-  //     category: postData.category,
-  //     visibility: postData.visibility,
-  //     status: isDraft ? 'draft' : 'published',
-  //     created_by: userId
-  //   });
-  console.log("Saving post:", { ...postData, status: isDraft ? "draft" : "published" });
-};
 
 const PostEditor = () => {
   const { toast } = useToast();
@@ -127,15 +98,38 @@ const PostEditor = () => {
     }
 
     try {
-      await savePost(postData, true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save drafts.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .insert({
+          title: postData.title,
+          content: postData.content,
+          category: postData.category,
+          is_locked: postData.visibility === "members",
+          is_published: false,
+          user_id: user.id,
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Draft saved",
         description: "Your post has been saved as a draft.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Save failed",
-        description: "Failed to save draft. Please try again.",
+        description: error.message || "Failed to save draft. Please try again.",
         variant: "destructive",
       });
     }
@@ -152,7 +146,30 @@ const PostEditor = () => {
     }
 
     try {
-      await savePost(postData, false);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to publish posts.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('posts')
+        .insert({
+          title: postData.title,
+          content: postData.content,
+          category: postData.category,
+          is_locked: postData.visibility === "members",
+          is_published: true,
+          user_id: user.id,
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Post published",
         description: "Your post is now live!",
@@ -171,10 +188,10 @@ const PostEditor = () => {
       });
       setImagePreviewUrls([]);
       setFileNames([]);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Publish failed",
-        description: "Failed to publish post. Please try again.",
+        description: error.message || "Failed to publish post. Please try again.",
         variant: "destructive",
       });
     }
