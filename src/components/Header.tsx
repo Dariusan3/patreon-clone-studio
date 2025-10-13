@@ -32,7 +32,7 @@ export function Header() {
 
   const navItems = [
     { label: "Home", href: "/", active: location.pathname === "/" },
-    { label: "Posts", href: "#" },
+    { label: "Posts", href: "/", active: location.pathname === "/" },
     { label: "Membership", href: "/membership", active: location.pathname === "/membership" },
     { label: "Shop", href: "/shop", active: location.pathname === "/shop" },
   ]
