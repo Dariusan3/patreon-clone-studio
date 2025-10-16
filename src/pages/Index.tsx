@@ -3,6 +3,12 @@ import { CreatorHero } from "@/components/CreatorHero";
 import { MembershipTiers } from "@/components/MembershipTiers";
 import { PostFeed } from "@/components/PostFeed";
 import { CreatorSidebar } from "@/components/CreatorSidebar";
+import { PopularPosts } from "@/components/PopularPosts";
+import { LatestPostSection } from "@/components/LatestPostSection";
+import { PostCollectionSlider } from "@/components/PostCollectionSlider";
+import { RecentPosts } from "@/components/RecentPosts";
+import { CollectionsSlider } from "@/components/CollectionsSlider";
+import { PopularProductsSlider } from "@/components/PopularProductsSlider";
 
 const Index = () => {
   return (
@@ -11,6 +17,12 @@ const Index = () => {
       
       <main>
         <CreatorHero />
+        <PopularPosts />
+        <LatestPostSection />
+        <PostCollectionSlider collectionTitle="Fan Favorites" />
+        <RecentPosts />
+        <CollectionsSlider />
+        <PopularProductsSlider />
         
         <MembershipTiers />
         
