@@ -9,6 +9,7 @@ import { PostCollectionSlider } from "@/components/PostCollectionSlider";
 import { RecentPosts } from "@/components/RecentPosts";
 import { CollectionsSlider } from "@/components/CollectionsSlider";
 import { PopularProductsSlider } from "@/components/PopularProductsSlider";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   return (
@@ -40,6 +41,7 @@ const Index = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

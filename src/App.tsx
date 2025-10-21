@@ -15,6 +15,9 @@ import AdminLogin from "./pages/AdminLogin";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
+import { Posts } from "./pages/Posts";
+import { Collections } from "./pages/Collections";
+import { Chats } from "./pages/Chats";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,9 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/posts" element={<Posts />} />
+              <Route path="/collections" element={<Collections />} />
+              <Route path="/chats" element={<Chats />} />
               <Route path="/membership" element={<Membership />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/member-login" element={<MemberLogin />} />

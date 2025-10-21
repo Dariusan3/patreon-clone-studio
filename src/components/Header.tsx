@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { NotificationBell } from "@/components/NotificationBell"
-import { Search, Menu, X, LogOut, User } from "lucide-react"
+import { Search, Menu, X, LogOut, User, Feather } from "lucide-react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
@@ -32,8 +32,9 @@ export function Header() {
 
   const navItems = [
     { label: "Home", href: "/", active: location.pathname === "/" },
-    { label: "Posts", href: "/", active: location.pathname === "/" },
-    { label: "Membership", href: "/membership", active: location.pathname === "/membership" },
+    { label: "Posts", href: "/posts", active: location.pathname === "/posts" },
+    { label: "Collections", href: "/collections", active: location.pathname === "/collections" },
+    { label: "Chats", href: "/chats", active: location.pathname === "/chats" },
     { label: "Shop", href: "/shop", active: location.pathname === "/shop" },
   ]
 
@@ -47,8 +48,9 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-4">
-            <div className="font-bold text-xl text-primary">Creator</div>
+          <div className="flex items-center space-x-2">
+            <Feather className="h-6 w-6 text-primary" />
+            <div className="font-bold text-xl text-primary">Yours Bird</div>
           </div>
 
           {/* Desktop Navigation */}
@@ -70,9 +72,6 @@ export function Header() {
 
           {/* Right Side */}
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <Search className="h-5 w-5" />
-            </Button>
             {user && <NotificationBell />}
             <ThemeToggle />
             
@@ -108,14 +107,14 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <>
-                <Button asChild variant="ghost" className="hidden md:flex">
-                  <Link to="/member-login">Sign In</Link>
+              <div className="flex items-center space-x-2">
+                <Button asChild variant="default" className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Link to="/signup">Join now</Link>
                 </Button>
-                <Button asChild variant="gradient" className="hidden md:flex">
-                  <Link to="/signup">Join Now</Link>
+                <Button asChild variant="outline">
+                  <Link to="/member-login">Log in</Link>
                 </Button>
-              </>
+              </div>
             )}
             
             {/* Mobile Menu Button */}
@@ -160,14 +159,14 @@ export function Header() {
                   </Button>
                 </>
               ) : (
-                <>
-                  <Button variant="ghost" className="justify-start" asChild>
-                    <Link to="/member-login">Sign In</Link>
+                <div className="flex flex-col space-y-2 pt-4">
+                  <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white justify-start" asChild>
+                    <Link to="/signup">Join now</Link>
                   </Button>
-                  <Button variant="gradient" className="justify-start" asChild>
-                    <Link to="/signup">Join Now</Link>
+                  <Button variant="outline" className="justify-start" asChild>
+                    <Link to="/member-login">Log in</Link>
                   </Button>
-                </>
+                </div>
               )}
             </nav>
           </div>
