@@ -1,354 +1,234 @@
 import { useState, useEffect } from "react";
-import { ShoppingCart, Download, Lock } from "lucide-react";
+import { ShoppingCart, Download, Lock, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Input } from "@/components/ui/input";
+import { HighlightedProductCard } from "@/components/HighlightedProductCard";
+import { ProductCard } from "@/components/ProductCard";
+import { PaginationControls } from "@/components/PaginationControls";
 import { supabase } from "@/integrations/supabase/client";
 
-interface ShopItem {
+interface Product {
   id: string;
   title: string;
-  description: string | null;
-  price: number;
-  image_url: string | null;
-  is_available: boolean;
+  description: string;
+  price: string;
+  imageUrl: string;
+  likes: number;
+  isLocked: boolean;
+  itemCount: number;
 }
 
-const mockProducts = [
+const DUMMY_HIGHLIGHTED_PRODUCT: Product = {
+  id: 'hp1',
+  title: 'Evelynn\'s Prey - Short Novel',
+  description: 'Evelynn finds her next prey, find out who it is and what she did to him in "Evelynn\'s Prey" novel.',
+  price: '€5.50',
+  imageUrl: '/src/assets/hero-bg.jpg',
+  likes: 13,
+  isLocked: false,
+  itemCount: 13,
+};
+
+const DUMMY_PRODUCTS: Product[] = [
   {
-    id: "1",
-    title: "Exclusive Art Pack Vol. 1",
-    description: "High-resolution digital artwork collection featuring 20+ pieces",
-    price: 29.99,
-    image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=500&h=300&fit=crop",
-    category: "art",
-    requiredTier: "silver",
-    fileUrl: "/downloads/art-pack-1.zip",
-    fileType: "zip",
-    isPurchased: false,
+    id: 'p1',
+    title: '(No. 3) | Biro\'s Wonderland - Chapter 1',
+    price: '€6.50',
+    imageUrl: '/src/assets/product-placeholder-1.jpg',
+    likes: 4,
+    isLocked: true,
+    description: 'A thrilling first chapter of Biro\'s Wonderland. Join now to unlock the full story!',
+    itemCount: 1,
   },
   {
-    id: "2",
-    title: "Behind The Scenes Videos",
-    description: "Exclusive 4K video content showing my creative process",
-    price: 49.99,
-    image: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=500&h=300&fit=crop",
-    category: "video",
-    requiredTier: "gold",
-    fileUrl: "/downloads/bts-videos.zip",
-    fileType: "zip",
-    isPurchased: false,
+    id: 'p2',
+    title: '(No. 8) | Biro\'s Wonderland - Chapter 2',
+    price: '€5.50',
+    imageUrl: '/src/assets/product-placeholder-2.jpg',
+    likes: 1,
+    isLocked: true,
+    description: 'The exciting second chapter of Biro\'s Wonderland. More adventure awaits!',
+    itemCount: 1,
   },
   {
-    id: "3",
-    title: "Digital Wallpaper Collection",
-    description: "50 stunning wallpapers for desktop and mobile",
-    price: 9.99,
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&h=300&fit=crop",
-    category: "art",
-    requiredTier: null,
-    fileUrl: "/downloads/wallpapers.zip",
-    fileType: "zip",
-    isPurchased: false,
+    id: 'p3',
+    title: '(No. 12) | Biro\'s Wonderland - Chapter 3',
+    price: '€5.50',
+    imageUrl: '/src/assets/product-placeholder-3.jpg',
+    likes: 2,
+    isLocked: true,
+    description: 'The gripping third chapter of Biro\'s Wonderland. What will happen next?',
+    itemCount: 1,
   },
   {
-    id: "4",
-    title: "Music Album - Digital Download",
-    description: "Complete album in FLAC and MP3 format with bonus tracks",
-    price: 19.99,
-    image: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=500&h=300&fit=crop",
-    category: "music",
-    requiredTier: null,
-    fileUrl: "/downloads/album.zip",
-    fileType: "zip",
-    isPurchased: false,
+    id: 'p4',
+    title: 'Mysterious Item 1',
+    price: '€7.00',
+    imageUrl: '/src/assets/product-placeholder-4.jpg',
+    likes: 5,
+    isLocked: false,
+    description: 'A very mysterious item with unknown properties.',
+    itemCount: 1,
   },
   {
-    id: "5",
-    title: "Tutorial PDF Bundle",
-    description: "Comprehensive guides and tutorials in PDF format",
-    price: 14.99,
-    image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=500&h=300&fit=crop",
-    category: "educational",
-    requiredTier: "silver",
-    fileUrl: "/downloads/tutorials.pdf",
-    fileType: "pdf",
-    isPurchased: false,
+    id: 'p5',
+    title: 'Secret Recipe Book',
+    price: '€12.00',
+    imageUrl: '/src/assets/product-placeholder-5.jpg',
+    likes: 8,
+    isLocked: true,
+    description: 'Unlock ancient secrets with this exclusive recipe book.',
+    itemCount: 1,
   },
   {
-    id: "6",
-    title: "Custom Preset Pack",
-    description: "Professional presets for photo and video editing",
-    price: 24.99,
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&h=300&fit=crop",
-    category: "tools",
-    requiredTier: "gold",
-    fileUrl: "/downloads/presets.zip",
-    fileType: "zip",
-    isPurchased: false,
+    id: 'p6',
+    title: 'Fantasy Map Pack',
+    price: '€9.50',
+    imageUrl: '/src/assets/product-placeholder-6.jpg',
+    likes: 3,
+    isLocked: false,
+    description: 'A collection of hand-drawn fantasy maps for your adventures.',
+    itemCount: 1,
   },
 ];
 
-// Logic placeholders for backend integration
-const getUserTier = (): string | null => {
-  // TODO: Implement actual user tier checking from backend
-  // This should query the user's current membership status
-  console.log("Checking user tier...");
-  return null; // Return actual tier: 'bronze', 'silver', 'gold', etc.
-};
+const DUMMY_PRODUCTS_PAGE2: Product[] = [
+  {
+    id: 'p7',
+    title: '(No. 15) | Biro\'s Wonderland - Chapter 4',
+    price: '€6.50',
+    imageUrl: '/src/assets/product-placeholder-1.jpg',
+    likes: 4,
+    isLocked: true,
+    description: 'A new chapter in Biro\'s Wonderland. More secrets to uncover!',
+    itemCount: 1,
+  },
+  {
+    id: 'p8',
+    title: 'Digital Art Brush Pack',
+    price: '€15.00',
+    imageUrl: '/src/assets/product-placeholder-2.jpg',
+    likes: 12,
+    isLocked: false,
+    description: 'A versatile collection of brushes for digital artists.',
+    itemCount: 1,
+  },
+  {
+    id: 'p9',
+    title: 'Animated Sticker Pack',
+    price: '€8.00',
+    imageUrl: '/src/assets/product-placeholder-3.jpg',
+    likes: 7,
+    isLocked: false,
+    description: 'Bring your messages to life with this fun animated sticker pack.',
+    itemCount: 1,
+  },
+  {
+    id: 'p10',
+    title: 'Exclusive Soundtrack Vol. 2',
+    price: '€20.00',
+    imageUrl: '/src/assets/product-placeholder-4.jpg',
+    likes: 18,
+    isLocked: true,
+    description: 'The highly anticipated second volume of exclusive soundtracks.',
+    itemCount: 1,
+  },
+  {
+    id: 'p11',
+    title: 'Limited Edition Print',
+    price: '€50.00',
+    imageUrl: '/src/assets/product-placeholder-5.jpg',
+    likes: 25,
+    isLocked: false,
+    description: 'A rare, signed print of a popular artwork. Limited quantities available!',
+    itemCount: 1,
+  },
+  {
+    id: 'p12',
+    title: 'Early Access Pass',
+    price: '€30.00',
+    imageUrl: '/src/assets/product-placeholder-6.jpg',
+    likes: 10,
+    isLocked: true,
+    description: 'Get exclusive early access to all upcoming content and features.',
+    itemCount: 1,
+  },
+];
 
-const hasAccessToProduct = (productId: string, requiredTier: string | null): boolean => {
-  // TODO: Implement tier access validation
-  // Check if user's tier meets or exceeds the required tier
-  const userTier = getUserTier();
-  console.log(`Checking access for product ${productId}, required tier: ${requiredTier}, user tier: ${userTier}`);
-  return requiredTier === null; // For now, only allow products with no tier requirement
-};
-
-const hasPurchasedProduct = (productId: string): boolean => {
-  // TODO: Query database to check if user has purchased this product
-  console.log(`Checking purchase status for product ${productId}`);
-  return false;
-};
-
-const addToCart = (productId: string) => {
-  // TODO: Implement cart functionality
-  // Add product to user's shopping cart in database
-  console.log(`Adding product ${productId} to cart`);
-};
-
-const purchaseProduct = async (productId: string) => {
-  // TODO: Implement purchase flow
-  // 1. Verify user authentication
-  // 2. Check tier requirements
-  // 3. Process payment
-  // 4. Create purchase record in database
-  // 5. Enable download access
-  console.log(`Processing purchase for product ${productId}`);
-};
-
-const initiateSecureDownload = async (productId: string, fileUrl: string) => {
-  // TODO: Implement secure download system
-  // 1. Verify user has purchased the product
-  // 2. Generate time-limited signed URL from storage
-  // 3. Log download activity
-  // 4. Return secure download link
-  console.log(`Initiating secure download for product ${productId}, file: ${fileUrl}`);
-  
-  // Example implementation with Supabase Storage:
-  // const { data, error } = await supabase.storage
-  //   .from('product-files')
-  //   .createSignedUrl(fileUrl, 3600); // 1 hour expiry
-  // if (data) window.open(data.signedUrl, '_blank');
-};
+const ALL_PRODUCTS = [...DUMMY_PRODUCTS, ...DUMMY_PRODUCTS_PAGE2];
 
 const Shop = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [products, setProducts] = useState<ShopItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 6; // Display 6 products per page as per image
+  const totalProducts = ALL_PRODUCTS.length;
+  const totalPages = Math.ceil(totalProducts / productsPerPage);
 
-  useEffect(() => {
-    fetchShopItems();
-  }, []);
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = ALL_PRODUCTS.slice(indexOfFirstProduct, indexOfLastProduct);
 
-  const fetchShopItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('shop_items')
-        .select('*')
-        .eq('is_available', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching shop items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load shop items",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredProducts = products;
-
-  const handleAddToCart = (productId: string, productTitle: string) => {
-    addToCart(productId);
-    toast({
-      title: "Added to cart",
-      description: `${productTitle} has been added to your cart.`,
-    });
-  };
-
-  const handleBuyNow = async (productId: string, productTitle: string) => {
-    try {
-      await purchaseProduct(productId);
-      toast({
-        title: "Purchase initiated",
-        description: `Processing purchase for ${productTitle}...`,
-      });
-    } catch (error) {
-      toast({
-        title: "Purchase failed",
-        description: "Please try again or contact support.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDownload = async (productId: string, fileUrl: string, productTitle: string) => {
-    if (!hasPurchasedProduct(productId)) {
-      toast({
-        title: "Access denied",
-        description: "You need to purchase this item first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await initiateSecureDownload(productId, fileUrl);
-      toast({
-        title: "Download started",
-        description: `Downloading ${productTitle}...`,
-      });
-    } catch (error) {
-      toast({
-        title: "Download failed",
-        description: "Please try again or contact support.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getTierBadgeVariant = (tier: string | null): "default" | "secondary" | "destructive" => {
-    if (!tier) return "secondary";
-    const tierMap: Record<string, "default" | "secondary" | "destructive"> = {
-      bronze: "secondary",
-      silver: "secondary",
-      gold: "default",
-    };
-    return tierMap[tier] || "secondary";
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      
-      <main className="container mx-auto px-4 py-8 mt-16">
+      <main className="container mx-auto px-4 py-8 flex-grow">
         <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-accent bg-clip-text text-transparent">
-              Shop
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover exclusive digital products and add-ons. Premium items are available to members of specific tiers.
-            </p>
+          {/* Search and Controls */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input placeholder="Search products" className="pl-10 w-full" />
+            </div>
+            <div className="flex items-center space-x-4">
+              <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
+              <span className="text-muted-foreground text-sm">{totalProducts} products</span>
+            </div>
           </div>
 
-          {/* Category Tabs */}
-          <Tabs defaultValue="all" className="mb-8" onValueChange={setSelectedCategory}>
-            <TabsList className="grid w-full grid-cols-6 max-w-3xl mx-auto">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="art">Art</TabsTrigger>
-              <TabsTrigger value="music">Music</TabsTrigger>
-              <TabsTrigger value="video">Video</TabsTrigger>
-              <TabsTrigger value="educational">Educational</TabsTrigger>
-              <TabsTrigger value="tools">Tools</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Highlighted Product */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">Highlighted product</h2>
+            <HighlightedProductCard {...DUMMY_HIGHLIGHTED_PRODUCT} />
+          </div>
 
-          {/* Products Grid */}
-          {loading ? (
-            <div className="flex items-center justify-center py-12 col-span-3">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-12 col-span-3">
-              <p className="text-muted-foreground">No shop items available yet</p>
-            </div>
-          ) : (
+          {/* All Products Grid */}
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">All products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => {
-                const isPurchased = false;
-
-                return (
-                  <Card key={product.id} className="flex flex-col hover:shadow-lg transition-shadow">
-                    <CardHeader className="p-0">
-                      <div className="relative aspect-video overflow-hidden rounded-t-lg bg-muted">
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt={product.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ShoppingCart className="w-16 h-16 text-muted-foreground" />
-                          </div>
-                        )}
-                        {isPurchased && (
-                          <Badge className="absolute top-3 left-3 bg-green-600">
-                            Owned
-                          </Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                  
-                    <CardContent className="flex-1 pt-6">
-                      <CardTitle className="mb-2">{product.title}</CardTitle>
-                      <CardDescription className="mb-4">{product.description || "Digital product"}</CardDescription>
-                    </CardContent>
-
-                    <CardFooter className="flex-col gap-3">
-                      <div className="w-full flex items-center justify-between mb-2">
-                        <span className="text-2xl font-bold">${product.price}</span>
-                      </div>
-
-                      {isPurchased ? (
-                        <Button 
-                          className="w-full"
-                          variant="default"
-                          onClick={() => handleDownload(product.id, "", product.title)}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
-                      ) : (
-                        <div className="w-full flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            className="flex-1"
-                            onClick={() => handleAddToCart(product.id, product.title)}
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Add to Cart
-                          </Button>
-                          <Button 
-                            variant="gradient"
-                            className="flex-1"
-                            onClick={() => handleBuyNow(product.id, product.title)}
-                          >
-                            Buy Now
-                          </Button>
-                        </div>
-                      )}
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+              {currentProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  imageUrl={product.imageUrl}
+                  likes={product.likes}
+                  isLocked={product.isLocked}
+                />
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-center">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
